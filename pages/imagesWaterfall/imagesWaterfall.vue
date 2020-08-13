@@ -2,7 +2,7 @@
 	<view class="wrap">
 		<u-waterfall v-model="flowList" ref="uWaterfall" v-if="flag">
 			<template v-slot:left="{leftList}">
-				<view class="demo-warter" v-for="(item, index) in leftList" :key="index">
+				<view class="demo-warter" v-for="(item, index) in leftList" :key="index" @tap="open(item)">
 					<!-- 警告：微信小程序不支持嵌入lazyload组件，请自行如下使用image标签 -->
 					<!-- #ifndef MP-WEIXIN -->
 					<u-lazy-load threshold="-450" border-radius="10" :image="item.thumbnailLink" :index="index"></u-lazy-load>
@@ -12,29 +12,10 @@
 						<image class="demo-image" :src="item.thumbnailLink" mode="widthFix"></image>
 					</view>
 					<!-- #endif -->
-					<!-- <view class="demo-title">
-						{{item.title}}
-					</view> -->
-					<!-- <view class="demo-price">
-						{{item.name}}
-					</view> -->
-					<!-- <view class="demo-tag">
-						<view class="demo-tag-owner">
-							自营
-						</view>
-						<view class="demo-tag-text">
-							放心购
-						</view>
-					</view> -->
-					<!-- <view class="demo-shop">
-						{{item.shop}}
-					</view> -->
-					<!-- 微信小程序无效，因为它不支持在template中引入组件 -->
-					<!-- <u-icon name="close-circle-fill" color="#fa3534" size="34" class="u-close" @click="remove(item.id)"></u-icon> -->
 				</view>
 			</template>
 			<template v-slot:right="{rightList}">
-				<view class="demo-warter" v-for="(item, index) in rightList" :key="index">
+				<view class="demo-warter" v-for="(item, index) in rightList" :key="index" @tap="open(item)">
 					<!-- #ifndef MP-WEIXIN -->
 					<u-lazy-load threshold="-450" border-radius="10" :image="item.thumbnailLink" :index="index"></u-lazy-load>
 					<!-- #endif -->
@@ -43,25 +24,6 @@
 						<image class="demo-image" :src="item.thumbnailLink" mode="widthFix"></image>
 					</view>
 					<!-- #endif -->
-					<!-- <view class="demo-title">
-						{{item.title}}
-					</view> -->
-					<!-- <view class="demo-price">
-						{{item.name}}
-					</view> -->
-					<!-- <view class="demo-tag">
-						<view class="demo-tag-owner">
-							自营
-						</view>
-						<view class="demo-tag-text">
-							放心购
-						</view>
-					</view> -->
-					<!-- <view class="demo-shop">
-						{{item.shop}}
-					</view> -->
-					<!-- 微信小程序无效，因为它不支持在template中引入组件 -->
-					<!-- <u-icon name="close-circle-fill" color="#fa3534" size="34" class="u-close" @click="remove(item.id)"></u-icon> -->
 				</view>
 			</template>
 		</u-waterfall>
@@ -94,7 +56,6 @@
 			let r = paths.filter(function(s) {
 				return s && s.trim();
 			});
-			console.log(paths)
 			let path = "";
 			for (let i = 0; i < r.length; i++) {
 				path += r[i] + '/'
@@ -107,12 +68,12 @@
 			if (!this.page_token) {
 				this.loadStatus = 'nomore';
 			} else {
-				this.addRandomData();
+				this.getData();
 			}
 		},
 		methods: {
 			addRandomData() {
-				if (!this.isLoad && !this.page_token) {
+				if (this.isLoad) {
 					for (let i = 0; i < this.files.length; i++) {
 						// let index = this.$u.random(0, this.list.length - 1);
 						let index = this.$u.random(0, this.files.length - 1);
@@ -121,10 +82,10 @@
 						let item = JSON.parse(JSON.stringify(this.files[index]))
 						item.id = this.$u.guid();
 						this.flowList.push(item);
-						this.loadStatus = 'nomore';
+						// this.loadStatus = 'nomore';
 					}
 				} else {
-					console.log(222222222)
+					this.loadStatus = 'nomore'
 				}
 
 			},
@@ -133,6 +94,26 @@
 			},
 			clear() {
 				this.$refs.uWaterfall.clear();
+			},
+			open(item){
+				console.log(this.$Global.url+encodeURI(this.path)+item.name)
+				console.log(this.$Global.previewImages)
+				// 预览图片
+				        uni.previewImage({
+				            urls: [this.$Global.url+encodeURI(this.path)+item.name],
+				            longPressActions: {
+				                itemList: ['发送给朋友', '保存图片', '收藏'],
+				                success: function(data) {
+				                    console.log('选中了第' + (data.tapIndex + 1) + '个按钮,第' + (data.index + 1) + '张图片');
+				                },
+				                fail: function(err) {
+				                    console.log(err.errMsg);
+				                }
+				            }
+				        });
+				// uni.navigateTo({
+				// 	url: '../imageDetail/imageDetail?data=' + encodeURIComponent(JSON.stringify(this.path))+'&title='+item.name
+				// });
 			},
 			getData() {
 				uni.showLoading({
@@ -147,59 +128,30 @@
 				}
 				this.$http.post(this.path, data).then(res => {
 					this.files = res.files
-					console.log(this.files)
+					if(this.files.length>0){
+						this.flag=true
+					}
+					for (let i = 0; i < this.files.length; i++) {
+						this.files[i].thumbnailLink=this.$Global.url+this.$Global.view[this.$Global.current]+'view?url='+this.files[i].thumbnailLink
+						if (this.files[i].mimeType == 'application/vnd.google-apps.folder') {
+							// this.files.slice(i)
+							this.$Global.previewImages.push(this.$Global.url+encodeURI(this.path)+this.files[i].name)
+							// delete this.files[i]
+						}
+					}
+					
+					uni.hideLoading()
+					this.addRandomData();
 					//设置page_token
 					this.page_token = res.nextPageToken
-					if (res.nextPageToken != null) {
+					console.log(this.page_token)
+					if (this.page_token) {
+						console.log("page_token不为空")
 						this.page_index++
 					} else {
 						this.isLoad = false
 					}
-					for (let i = 0; i < this.files.length; i++) {
-						if (this.files[i].mimeType == 'application/vnd.google-apps.folder') {
-							// this.files.slice(i)
-							delete this.files[i]
-						}
-					}
-					this.flag = true
-					uni.hideLoading()
-					this.addRandomData();
-				}).catch(err => {
-					uni.showToast({
-						title: err,
-						duration: 2000
-					});
-				})
-			},
-			getList() {
-				uni.showLoading({
-					mask: true,
-					title: '加载中'
-				})
-				let data = {
-					page_index: this.page_index,
-					page_token: this.page_token,
-					password: this.$Global.password,
-					q: this.q
-				}
-				this.$http.post(this.path, data).then(res => {
-					this.files = res.files
-					//设置page_token
-					this.page_token = res.nextPageToken
-					if (res.nextPageToken != null) {
-						this.page_index++
-					} else {
-						this.isLoad = false
-					}
-					for (let i = 0; i < this.files.length; i++) {
-						if (this.files[i].mimeType == 'application/vnd.google-apps.folder') {
-							// this.files.slice(i)
-							delete this.files[i]
-						}
-					}
-					this.flag = true
-					uni.hideLoading()
-					this.addRandomData();
+					
 				}).catch(err => {
 					uni.showToast({
 						title: err,

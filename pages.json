@@ -19,6 +19,10 @@
             "path" : "pages/page/page",
             "style" : {}
         }
+        ,{
+            "path" : "pages/imageDetail/imageDetail",
+            "style" : {}
+        }
     ],
 	"globalStyle": {
 		"navigationBarTextStyle": "black",
