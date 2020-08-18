@@ -48,7 +48,7 @@
 			}
 		},
 		onLoad(option) {
-			const item = JSON.parse(decodeURIComponent(option.item));
+			const item = JSON.parse(decodeURIComponent(this.$Global.globalPath));
 			uni.setNavigationBarTitle({
 				title: option.title
 			})
@@ -96,8 +96,8 @@
 				this.$refs.uWaterfall.clear();
 			},
 			open(item){
-				console.log(this.$Global.url+encodeURI(this.path)+item.name)
-				console.log(this.$Global.previewImages)
+				// console.log(this.$Global.url+encodeURI(this.path)+item.name)
+				// console.log(this.$Global.previewImages)
 				// 预览图片
 				        uni.previewImage({
 				            urls: [this.$Global.url+encodeURI(this.path)+item.name],

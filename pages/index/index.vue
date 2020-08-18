@@ -7,6 +7,7 @@
 			 :value="item.modifiedTime"></u-cell-item>
 			<u-cell-item v-else-if="item.mimeType=='image/jpeg'" icon="photo" :title="item.name" @tap="open(item)" :value="item.modifiedTime"></u-cell-item>
 		</u-cell-group>
+		<u-loadmore bg-color="rgb(240, 240, 240)" :status="loadStatus" ></u-loadmore>
 	</view>
 </template>
 
@@ -30,7 +31,12 @@
 				files: [],
 				current: 0,
 				flag: true,
-				path: ''
+				path: '',
+				page_index: 0,
+				page_token: null,
+				list: [],
+				isLoad: true,
+				q: ''
 			}
 		},
 		onLoad() {
@@ -40,23 +46,54 @@
 			this.getData(this.current)
 			// console.log(this.drives)
 		},
+		onReachBottom() {
+			this.loadStatus = 'loading';
+			if (!this.page_token) {
+				this.loadStatus = 'nomore';
+			} else {
+				this.getData(this.current);
+			}
+		},
 		methods: {
+			loadData(){
+				if (this.isLoad) {
+					for (let i = 0; i < this.files.length; i++) {
+						this.list.push(this.files[i])
+					}
+				}else {
+					this.loadStatus = 'nomore'
+				}
+			},
 			async getData(current) {
 				uni.showLoading({
 					title: '加载中！',
 					mask: true
 				})
 				this.files = []
-				let driveList = await this.$http.post(this.$Global.path[current]).then(res => {
+				let data = {
+					page_index: this.page_index,
+					page_token: this.page_token,
+					password: this.$Global.password,
+					q: this.q
+				}
+				let driveList = await this.$http.post(this.$Global.path[current],data).then(res => {
 					this.flag = true
 					this.files = res.files
-					console.log(this.files)
 					for(let i=0;i<this.files.length;i++){
 						// console.log(this.files[i].modifiedTime)
 						// console.log(this.$Global.formatDate(this.files[i].modifiedTime))
 						this.files[i].modifiedTime=this.$Global.formatDate(this.files[i].modifiedTime)
 					}
 					uni.hideLoading()
+					this.loadData()
+					//设置page_token
+					this.page_token = res.nextPageToken
+					if (this.page_token) {
+						console.log("page_token不为空")
+						this.page_index++
+					} else {
+						this.isLoad = false
+					}
 				}).catch(err => {
 				})
 			},
@@ -72,10 +109,11 @@
 				if(item.mimeType == 'image/jpeg'){
 					
 				}else{
+					this.path=''
 					this.path += path
-					console.log(item.name)
+					this.$Global.globalPath=encodeURIComponent(JSON.stringify(this.path))
 					uni.navigateTo({
-					    url: '../page/page?item='+encodeURIComponent(JSON.stringify(this.path))+'&title='+item.name
+					    url: '../page/page?title='+item.name+'&index=1'
 					});
 				}
 

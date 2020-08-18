@@ -61,7 +61,7 @@
 							}
 							// 成功
 							let data = result.data.data
-							// console.log(result.data)
+							console.log(result.data)
 							res(data)
 						},
 						fail: (error) => {

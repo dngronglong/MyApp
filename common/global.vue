@@ -6,6 +6,7 @@
 	const password=null;
 	const view=["/0:","/1:","/2:"];
 	const previewImages=[];
+	const globalPath='';
 	//获取网盘列表
 	function driveList(){
 		let list=[];
@@ -42,6 +43,7 @@
 		password,
 		current,
 		view,
-		previewImages
+		previewImages,
+		globalPath
 	}
 </script>
